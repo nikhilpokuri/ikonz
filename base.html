@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <h1 style="font-size: 3rem; color: white">{{type}}<br>{{description}}</h1>
+    <style>
+      body {
+        background: linear-gradient(to bottom right, #000066 0%, #000000 20%)
+      }
+      
+      #my-div {
+        font-size: 20px;
+        color: white;
+      }
+
+    </style>
+  </head>
+  <body>
+
+    <div id="my-div">
+        <br><h2>&emsp;&emsp;&emsp;<u>People who has registered in your website..!!</u></h2><br>
+        {% for user in users %}
+            {% for item in user %}
+                <p>&emsp;&emsp;&emsp;&emsp;&emsp;{{item}} : {{user[item]}} </p>
+            {% endfor %}&emsp;&emsp;&emsp;_______________________________________
+         {% endfor %} 
+    </div>
+
+  </body>
+</html>
