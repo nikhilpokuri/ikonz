@@ -29,51 +29,52 @@ async def home():
     html = template.render(msg)
     return HTMLResponse(content=html)
 
-def get_data(db,collec):
+def get_data():
     data = []
-    my_db = my_client[db]
-    my_collec = my_db[collec]
-    for actor in my_collec.find():
+    for user in my_collec.find():
         data.append(
             {
-                'id': str(actor["_id"]),
-                'name' : actor['name'],
-                'email' : actor['email'],
-                'phone' : actor['phone'],
+                'id': str(user["_id"]),
+                'name' : user['name'],
+                'email' : user['email'],
+                'phone' : user['phone'],
             }
         )
     return data
 
 @app.get('/get_all_accounts/')
 async def get_all():
-    actors = get_data('bio','users')
-    return {'all_user_bio':actors}
+    users = get_data()
+    return {'all_user_bio' : users}
 
 @app.get('/get-by-id/{_id}')
 async def get_by_id(_id: str):
-    data = []
-    for actor in my_collec.find():
-        if str(actor['_id'])==_id:
-            data.append({'name' : actor['name'],
-                    'email' : actor['email'],
-                    'phone' : actor['phone'],})
-    return {f'ObjectId({_id})':data}
+    user = my_collec.find_one({'_id':ObjectId(_id)})
+    unpacked_data = {
+                'id': str(user["_id"]),
+                'name' : user['name'],
+                'email' : user['email'],
+                'phone' : user['phone'],
+            }
+    return {'response' : unpacked_data}
 
 @app.get('/get-by-query')
 async def get_by_query(search: str):
-    new_db = {}
+    unpacked_data = {}
     for item in my_collec.find():
-        for key,val in dict(item).items():
-            if search == val or str(item['_id'])==search or search == str(item['phone']):
-                new_db['name'] = item['name']
-                new_db['email'] = item['email']
-                new_db['phone'] = item['phone']
-    return {'response' : new_db}
+        if search in dict(item).values() or search == str(item['_id']):
+            unpacked_data = {
+                'id': str(item['_id']),
+                'name' : item['name'],
+                'email' : item['email'],
+                'phone' : item['phone'],
+            }
+    return {'response' : unpacked_data}
 
 class User(BaseModel):
-    name : Optional[str]=Form(...)
-    email : Optional[str]=Form(...)
-    phone : Optional[str]=Form(...)
+    name : Optional[str]
+    email : Optional[str]
+    phone : Optional[str]
 
 @app.post('/create-user')
 async def create_actor(user: User):
@@ -85,12 +86,17 @@ async def create_actor(user: User):
     my_collec.insert_one(new_db)
     return {'response' : f'{user.name} has loaded successfully in data'}
 
-@app.post('/update-user/{_id}')
+@app.post('/update-user')
 async def update_user(user: User,_id):
     query = {'_id':ObjectId(_id)}
     check = {key:val for key,val in user if val!=None}
     for i in check:
         newvalues = { "$set": {i : check[i]} }
-        my_collec.update_one(query,newvalues) 
-        print(i,check[i])
+        my_collec.update_one(query,newvalues)
     return {'response' : 'details updated successfully'}
+
+@app.delete('/delete-user')
+async def delete_user(_id):
+    query = {'_id':ObjectId(_id)}
+    my_collec.find_one_and_delete(query)
+    return {'response' : 'user deleted succeccfully'}
